@@ -1,4 +1,3 @@
-# https://medium.com/looka-engineering/how-to-use-tensorboard-with-pytorch-in-google-colab-1f76a938bc34
 """
 #Install
 pip install tensorboardX
@@ -30,6 +29,10 @@ get_ipython().system_raw('./ngrok http 6006 &')
 
 from tensorboardX import SummaryWriter
 from fastai.callback import Callback
+from fastai.vision import ImageList,CategoryList
+from fastai.train import ClassificationInterpretation
+from pathlib import Path
+import torch
 from time import gmtime, strftime
 
 class TensorBoardMonitor(Callback):
@@ -81,10 +84,10 @@ class TensorBoardMonitor(Callback):
               comment='TensorBoard Monitor', 
             )
 
-        dummy_input = torch.zeros(learn.data.one_batch()[0].shape).cuda()
+        dummy_input = torch.zeros(self.learn.data.one_batch()[0].shape).cuda()
         self.writer.add_graph(self.learn.model, dummy_input)
-        self.writer.add_text('Summary', TensorBoardMonitor._mark_text(learn.summary()))
-        self.writer.add_text('Model', TensorBoardMonitor._mark_text(learn.model))
+        self.writer.add_text('Summary', TensorBoardMonitor._mark_text(self.learn.summary()))
+        self.writer.add_text('Model', TensorBoardMonitor._mark_text(self.learn.model))
 
     def write_params_histogram(self,n_iter):
        for name, param in self.learn.model.named_parameters():
@@ -95,10 +98,9 @@ class TensorBoardMonitor(Callback):
             self.writer.add_scalar(name, val, n_iter)        
             
     def write_model(self, metric):
-        print('Saved new model to: ', 
-              self.learn.save(self.run_name, return_path=True), 
-              ' (', metric,')')    
-            
+        self.writer.add_text('Model save path', 
+                             str(self.learn.save(self.run_name, return_path=True)) +
+                             f' ({metric})' )       
       
     def on_train_begin(self, **kwargs):
         self.write_summary()
@@ -136,9 +138,9 @@ class TensorBoardMonitor(Callback):
         #Add figure
         if (self.vision_top_losses_freq>0 
           and (epoch % self.vision_top_losses_freq)==0
-          and isinstance(learn.data.x,ImageList)
-          and isinstance(learn.data.y,CategoryList)):
-            interp = ClassificationInterpretation.from_learner(learn);
+          and isinstance(self.learn.data.x,ImageList)
+          and isinstance(self.learn.data.y,CategoryList)):
+            interp = ClassificationInterpretation.from_learner(self.learn);
             fig = interp.plot_top_losses(9, 
                                          figsize=(15,11), 
                                          heatmap=True,

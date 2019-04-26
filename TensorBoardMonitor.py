@@ -100,7 +100,7 @@ class TensorBoardMonitor(Callback):
               ' (', metric,')')    
             
       
-    def on_train_begin(self, **kwargs:Any)->None:
+    def on_train_begin(self, **kwargs):
         self.write_summary()
         self.writer.add_text('Hyperparameters', 
                             f'lr: {self.learn.opt.lr}, mom: {self.learn.opt.mom}, wd: {self.learn.opt.wd}, beta: {self.learn.opt.beta}')
